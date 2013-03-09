@@ -1,0 +1,42 @@
+<VisualMicro>
+  <Program Name="sonar_light" Ext=".ino" Location="D:\arduino-1.0.3\prj\sonar_light">
+    <Compile CompilerErrors="0" ConfigurationName="Debug" StopOnError="False" OptimiseLibs="True" OptimiseCore="True" BuildPath="C:\Users\chowchow\AppData\Local\VMicro\Arduino\Builds\sonar_light\uno" IncludeDebug="0" IncludesDebug="0" SketchName="sonar_light" IsCompiled="1" />
+    <Platform Name="Arduino">
+      <Board Name="uno" Description="Arduino Uno" CoreFolder="D:\arduino-1.0.3\hardware\arduino\cores\arduino" VariantFullPath="D:\arduino-1.0.3\hardware\arduino\variants\standard" bootloader.extended_fuses="0x05" bootloader.file="optiboot_atmega328.hex" bootloader.high_fuses="0xde" bootloader.lock_bits="0x0F" bootloader.low_fuses="0xff" bootloader.path="optiboot" bootloader.unlock_bits="0x3F" build.core="arduino" build.f_cpu="16000000L" build.mcu="atmega328p" build.variant="standard" build.variant.vmresolved="D:\arduino-1.0.3\hardware\arduino\variants\standard" name="Arduino Uno" upload.maximum_size="32256" upload.protocol="arduino" upload.speed="115200" />
+    </Platform>
+    <VCCodeModel>
+      <VCCodeMacros>
+        <VCCodeMacro Name="ARDUINO" Value="103" />
+        <VCCodeMacro Name="__AVR_ATmega328P__" Value="" />
+        <VCCodeMacro Name="F_CPU" Value="16000000L" />
+        <VCCodeMacro Name="__AVR__" Value="" />
+        <VCCodeMacro Name="BH1750address" Value="0x23" />
+        <VCCodeMacro Name="__cplusplus" Value="" />
+        <VCCodeMacro Name="TRIGGER_PIN" Value="5" />
+        <VCCodeMacro Name="__attribute__" Value="" />
+        <VCCodeMacro Name="ECHO_PIN" Value="6" />
+        <VCCodeMacro Name="__inline__" Value="" />
+        <VCCodeMacro Name="MAX_DISTANCE" Value="100" />
+        <VCCodeMacro Name="__asm__" Value="" />
+        <VCCodeMacro Name="warmLedPin" Value="3" />
+        <VCCodeMacro Name="__extension__" Value="" />
+        <VCCodeMacro Name="coldLedPin" Value="9" />
+        <VCCodeMacro Name="__ATTR_PURE__" Value="" />
+        <VCCodeMacro Name="__ATTR_CONST__" Value="" />
+        <VCCodeMacro Name="__inline__" Value="" />
+        <VCCodeMacro Name="__asm__" Value="" />
+        <VCCodeMacro Name="__volatile__" Value="" />
+        <VCCodeMacro Name="__builtin_va_list" Value="" />
+        <VCCodeMacro Name="__builtin_va_start" Value="" />
+        <VCCodeMacro Name="__builtin_va_end" Value="" />
+        <VCCodeMacro Name="__DOXYGEN__" Value="" />
+        <VCCodeMacro Name="prog_void" Value="" />
+        <VCCodeMacro Name="PGM_VOID_P" Value="int" />
+        <VCCodeMacro Name="NOINLINE" Value="__attribute__((noinline))" />
+      </VCCodeMacros>
+      <VCCodeVariables>
+        <VCCodeVariable Name="buff" />
+      </VCCodeVariables>
+    </VCCodeModel>
+  </Program>
+</VisualMicro>
