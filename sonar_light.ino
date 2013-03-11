@@ -11,11 +11,11 @@
 
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 byte buff[2];
-unsigned char luminantWarm = 0, luminantCold = 0;
+unsigned char luminantWarm = 30, luminantCold = 30;
 unsigned int TableDistance = 0;
 unsigned int RingBuffer[8], RingBufferMA[8];
-unsigned int uS, pingValue;
-unsigned char DimmingMode = 0, ColorTempMode = 0, Shutdown = 0;
+int uS, pingValue, pingValueOld;
+byte DimmingMode = 0, ColorTempMode = 0, Shutdown = 0, ShutdownCount = 0;;
 
 unsigned int GetTableDistance()
 {
@@ -31,29 +31,66 @@ void EnterDimmingMode()
   RingBuffer[0] = uS;
   unsigned int pingTimes = 0;
   i = 1;
+  int DimStep = 0;
+  byte Bottom = 0;
+  pingValueOld = sonar.ping();
   for(;;)
   {
+    delay(50);
     pingValue = sonar.ping();
-    pingTimes++;
-    if (pingTimes == 3000)  //finished 300 times of ping, approx 10 seconds.
+    if (pingValue < 200)
     {
-      Serial.println("Quit Dimming Mode..........................");
-      delay(1000);
-      return;
-    }
-    if ((pingValue < 7 * TableDistance / 8) && (pingValue > TableDistance / 8)) //if ping value is in valid range then put it in ring buffer
-    {
-      RingBuffer[i % 8] = pingValue;
-      Serial.println(RingBuffer[i % 8]);  //fill in ring buffer
-      if (i < 7)
-        i++;
-      else 
-        i = 0;
+      if ((++ShutdownCount) == 40)    
+        ShutdownLight();
     }
     else
-      Serial.println(pingValue);
-    //analogWrite(warmLedPin, luminantWarm);
-    //analogWrite(warmLedPin, luminantCold);
+    {
+      ShutdownCount = 0;
+    }
+    Serial.println(pingValue);
+    if ( abs(pingValue - pingValueOld) < (TableDistance / 8) && (pingValue < 7 * TableDistance /8) )  //consider as valid continue point
+    {
+      if (pingValueOld - pingValue > 60)
+      {
+        Serial.print("I am negative, pingValue is");
+        Serial.println(pingValue);
+        Serial.print("pingValueOld is ");
+        Serial.println(pingValueOld);
+        DimStep = -1;
+        Bottom = 0;
+        if (luminantWarm != 0)
+          analogWrite(warmLedPin, luminantWarm -= 5);
+        if (luminantCold != 0)  
+          analogWrite(coldLedPin, luminantCold -= 5);
+        Serial.print("Dimming Value is    ");
+        Serial.println(luminantWarm);
+      }
+      else if (pingValue - pingValueOld > 60)
+      {
+        Serial.print("I am positive, pingValue is");
+        Serial.println(pingValue);
+        Serial.print("pingValueOld is ");
+        Serial.println(pingValueOld);
+        DimStep = 1;
+        Bottom = 0;
+        if (luminantWarm < 77)
+          analogWrite(warmLedPin, luminantWarm += 5);
+        if (luminantCold < 77)  
+          analogWrite(coldLedPin, luminantCold += 5);
+        Serial.print("Dimming Value is    ");
+        Serial.println(luminantWarm);
+      }
+    }
+    else if ((pingValue > 7 * TableDistance /8))
+    {
+      Bottom++;
+    }
+    if (Bottom == 100)
+    {
+      Serial.println("Leaving Dimming Mode..........");
+      return;
+    }
+    pingValueOld = pingValue;
   }
 }
 
@@ -79,31 +116,32 @@ void setup()
   BH1750_Init(BH1750address);
   Serial.begin(19200); // Open serial monitor at 115200 baud to see ping results.
   TableDistance = GetTableDistance();
+  Serial.print("TableDistance is     ");
+  Serial.println(TableDistance);
 } 
 
 
 void loop()  
 {
-  delay(10);                      // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
+  delay(50);                      // Wait 50ms between pings (about 20 pings/sec). 29ms should be the shortest delay between pings.
   uS = sonar.ping(); // Send ping, get ping time in microseconds (uS).
   if (uS < (TableDistance / 2) && uS > (TableDistance / 8))
   {
+    ShutdownCount = 0;
     EnterDimmingMode();
     //TableDistance = GetTableDistance(); 
   }   
   else if (uS > (TableDistance / 2) && uS < (7 * TableDistance / 8))
   {
+    ShutdownCount = 0;
     EnterColorTempMode();
     //TableDistance = GetTableDistance();
   }
-  else if (uS < (TableDistance / 8))
-  {
-    ShutdownLight();
-    //TableDistance = GetTableDistance();
-  }
   else if (uS > (7 * TableDistance / 8))
+  {
     TableDistance = GetTableDistance();
-    
+    ShutdownCount = 0;
+  } 
     
   //Serial.print(" ");
   Serial.println(uS); // Convert ping time to distance and print result (0 = outside set distance range, no ping echo)
