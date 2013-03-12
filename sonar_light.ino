@@ -1,3 +1,4 @@
+#include <EEPROM.h>
 #include <NewPing.h>
 #include <Wire.h> //BH1750 IIC Mode 
 #include <math.h> 
@@ -6,16 +7,17 @@
 #define TRIGGER_PIN   5  // Arduino pin tied to trigger pin on the ultrasonic sensor.
 #define ECHO_PIN      6  // Arduino pin tied to echo pin on the ultrasonic sensor.
 #define MAX_DISTANCE  100 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
-#define warmLedPin    3    // Warm LED connected to digital pin 3
-#define coldLedPin    9    // Cold LED connected to digital pin 9
+#define warmLedPin    9    // Warm LED connected to digital pin 9
+#define coldLedPin    10    // Cold LED connected to digital pin 10
+#define warmLight_addr  0
+#define coldLight_addr  1
 
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
-byte buff[2];
 unsigned char luminantWarm = 30, luminantCold = 30;
-unsigned int TableDistance = 0;
-unsigned int RingBuffer[8], RingBufferMA[8];
+int TableDistance = 0;
+byte buff[2];
 int uS, pingValue, pingValueOld;
-byte DimmingMode = 0, ColorTempMode = 0, Shutdown = 0, ShutdownCount = 0;;
+byte DimmingMode = 0, ColorTempMode = 0, Shutdown = 0, ShutdownCount = 0;
 
 unsigned int GetTableDistance()
 {
@@ -27,10 +29,6 @@ void EnterDimmingMode()
   DimmingMode = 1;
   Serial.println("EnterDimmingMode");
   delay(1000);
-  unsigned char i = 0;
-  RingBuffer[0] = uS;
-  unsigned int pingTimes = 0;
-  i = 1;
   int DimStep = 0;
   byte Bottom = 0;
   pingValueOld = sonar.ping();
@@ -76,7 +74,7 @@ void EnterDimmingMode()
         if (luminantWarm < 77)
           analogWrite(warmLedPin, luminantWarm += 5);
         if (luminantCold < 77)  
-          analogWrite(coldLedPin, luminantCold += 5);
+          analogWrite(coldLedPin, luminantCold += 10);
         Serial.print("Dimming Value is    ");
         Serial.println(luminantWarm);
       }
@@ -84,6 +82,8 @@ void EnterDimmingMode()
     else if ((pingValue > 7 * TableDistance /8))
     {
       Bottom++;
+      Serial.print("Bottom is ");
+      Serial.println(Bottom);
     }
     if (Bottom == 100)
     {
@@ -105,6 +105,8 @@ void ShutdownLight()
 {
   Shutdown = 1;
   Serial.println("Shutdown Light"); 
+  EEPROM.write(warmLight_addr, luminantWarm);
+  EEPROM.write(coldLight_addr, luminantCold);
   analogWrite(warmLedPin, 0);
   analogWrite(coldLedPin, 0);
   delay(1000);
@@ -112,6 +114,8 @@ void ShutdownLight()
 
 void setup()  
 {
+  analogWrite(warmLedPin, EEPROM.read(warmLight_addr));
+  analogWrite(coldLedPin, EEPROM.read(coldLight_addr));
   Wire.begin(); 
   BH1750_Init(BH1750address);
   Serial.begin(19200); // Open serial monitor at 115200 baud to see ping results.
@@ -139,7 +143,7 @@ void loop()
   }
   else if (uS > (7 * TableDistance / 8))
   {
-    TableDistance = GetTableDistance();
+    //TableDistance = GetTableDistance();
     ShutdownCount = 0;
   } 
     
