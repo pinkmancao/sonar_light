@@ -223,7 +223,7 @@ void setup()
 {
   analogWrite(warmLedPin, EEPROM.read(warmLight_addr));
   analogWrite(coldLedPin, EEPROM.read(coldLight_addr));
-  luminant = EEPROM.read(luminantlowbyte_addr) | uint16_t(luminanthighbyte_addr) << 8;
+  luminant = EEPROM.read(luminantlowbyte_addr) | uint16_t(EEPROM.read(luminanthighbyte_addr)) << 8;
   Wire.begin(); 
   BH1750_Init(BH1750address);
   Serial.begin(19200); // Open serial monitor at 115200 baud to see ping results.
