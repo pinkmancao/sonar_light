@@ -11,7 +11,8 @@
 #define coldLedPin    10    // Cold LED connected to digital pin 10
 #define warmLight_addr  0
 #define coldLight_addr  1
-#define luminant_addr 2
+#define luminantlowbyte_addr 2
+#define luminanthighbyte_addr 3
 
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 unsigned char luminantWarm = 30, luminantCold = 30;
@@ -101,7 +102,9 @@ void EnterDimmingMode()
       {
         val=((buff[0]<<8)|buff[1])/1.2;
         luminant = val;
-        EEPROM.write(luminant_addr, luminant);
+        EEPROM.write(luminantlowbyte_addr, luminant & 0xFF);
+        EEPROM.write(luminanthighbyte_addr, luminant >> 8);
+        Serial.println("Wrote luminant..........");
       }
       return ;
     }
@@ -184,7 +187,9 @@ void EnterColorTempMode()
       {
         val=((buff[0]<<8)|buff[1])/1.2;
         luminant = val;
-        EEPROM.write(luminant_addr, luminant);
+        EEPROM.write(luminantlowbyte_addr, luminant & 0xFF);
+        EEPROM.write(luminanthighbyte_addr, luminant >> 8);
+        Serial.println("Wrote luminant..........");
       }
       return ;
     }
@@ -198,17 +203,27 @@ void ShutdownLight()
   Serial.println("Shutdown Light"); 
   EEPROM.write(warmLight_addr, luminantWarm);
   EEPROM.write(coldLight_addr, luminantCold);
-  EEPROM.write(luminant_addr, luminant);
+  EEPROM.write(luminantlowbyte_addr, luminant & 0xFF);
+  EEPROM.write(luminanthighbyte_addr, luminant >> 8);
+  Serial.println("Wrote luminant..........");
   analogWrite(warmLedPin, 0);
   analogWrite(coldLedPin, 0);
   delay(5000);
+  TableDistance = GetTableDistance();
+}
+
+void TurnOnLight()
+{
+  analogWrite(warmLedPin, luminantWarm);
+  analogWrite(coldLedPin, luminantCold);
+  Shutdown = 0;
 }
 
 void setup()  
 {
   analogWrite(warmLedPin, EEPROM.read(warmLight_addr));
   analogWrite(coldLedPin, EEPROM.read(coldLight_addr));
-  luminant = EEPROM.read(luminant_addr);
+  luminant = EEPROM.read(luminantlowbyte_addr) | uint16_t(luminanthighbyte_addr) << 8;
   Wire.begin(); 
   BH1750_Init(BH1750address);
   Serial.begin(19200); // Open serial monitor at 115200 baud to see ping results.
@@ -224,14 +239,28 @@ void loop()
   uS = sonar.ping(); // Send ping, get ping time in microseconds (uS).
   if (uS < (TableDistance / 2) && uS > (TableDistance / 8))
   {
-    ShutdownCount = 0;
-    EnterDimmingMode();
+    if (Shutdown == 0)
+    {
+      ShutdownCount = 0;
+      EnterDimmingMode();
+    }
+    else
+    {
+      TurnOnLight();
+    }
     //TableDistance = GetTableDistance(); 
   }   
   else if (uS > (TableDistance / 2) && uS < (7 * TableDistance / 8))
   {
-    ShutdownCount = 0;
-    EnterColorTempMode();
+    if (Shutdown == 0)
+    {
+      ShutdownCount = 0;
+      EnterColorTempMode();
+    }
+    else
+    {
+      TurnOnLight();
+    }
     //TableDistance = GetTableDistance();
   }
   else if (uS > (7 * TableDistance / 8))
@@ -247,25 +276,27 @@ void loop()
   //uint16_t val=0;
   
   //delay(200);
-
-  if(2==BH1750_Read(BH1750address))
+  if (Shutdown == 0)
   {
-    val=((buff[0]<<8)|buff[1])/1.2;
-    Serial.print(val,DEC);     
-    Serial.println("[lx]"); 
-    if (val < luminant-20)
+    if(2==BH1750_Read(BH1750address))
     {
+      val=((buff[0]<<8)|buff[1])/1.2;
+      Serial.print(val,DEC);     
+      Serial.println("[lx]"); 
+      if (val < luminant-20)
+      {
         if (luminantWarm <= 250)
           analogWrite(warmLedPin, luminantWarm += 5);
         if (luminantCold <= 250)
           analogWrite(coldLedPin, luminantCold += 5);
-    }
-    else if (val > luminant+20)
-    {
-      if (luminantWarm >= 5)
-        analogWrite(warmLedPin, luminantWarm -= 5);
-      if (luminantCold >= 5)  
-        analogWrite(coldLedPin, luminantCold -= 5);      
+      }
+      else if (val > luminant+20)
+      {
+        if (luminantWarm >= 5)
+          analogWrite(warmLedPin, luminantWarm -= 5);
+        if (luminantCold >= 5)  
+          analogWrite(coldLedPin, luminantCold -= 5);      
+      }
     }
   }
   //delay(150);
